@@ -1,36 +1,27 @@
-const express = require('express')
-const mongoose = require('mongoose')
+import express from 'express'
+import mongoose from 'mongoose'
+import { passport, secret_session } from './auth'
+import { initSocketServer } from './socket'
+import router from './routes'
+import errorMiddleware from './middleware/error'
+import { preloadBooks } from './storage/books'
+import { preloadUsers } from './storage/users'
 
 const app = express()
 app.use(express.json())   
 app.use(express.urlencoded())
 app.set("views","src/views")
 app.set('view engine', 'ejs')
-
-const {passport, session} = require('./auth')
-app.use(session)
+app.use(secret_session)
 app.use(passport.initialize())
 app.use(passport.session())
-
-const socket = require('./socket')
-const { server, io } = socket.initServer(app, session, passport)
-
-const router = require('./routes')
 app.use(router)
-
-const errorMiddleware = require('./middleware/error')
 app.use(errorMiddleware)
 
-// const path = require('path')
-// const public_dir = path.join(__dirname,"public")
-// console.log(`public dir - ${public_dir}`)
-// app.use('/public', express.static(public_dir)) // даем возможность загружать файлы
-
-const preloadBooks = require('./storage/books')
-const preloadUsers = require('./storage/users')
+const { server, io } = initSocketServer(app, secret_session, passport)
 
 // Объявляем асинхронную функциню для соединения с БД и запуском сервера
-async function start(PORT, MONGODB_URL) {
+async function start(PORT: number, MONGODB_URL: string) {
     try {
         console.log(`MONGODB_URL - ${MONGODB_URL}`)
         await mongoose.connect(MONGODB_URL);
@@ -46,5 +37,5 @@ async function start(PORT, MONGODB_URL) {
 
 const MONGODB_URL = process.env.MONGODB_URL
 // Настраиваем порт, который будет прослушивать сервер
-const PORT = process.env.PORT || 3000
+const PORT = <number><unknown>process.env.PORT || 3000
 start(PORT, MONGODB_URL)

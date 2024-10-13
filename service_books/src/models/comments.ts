@@ -1,13 +1,12 @@
-//const {Schema, model, ObjectId} = require('mongoose')
-import {Schema, model, ObjectId} from 'mongoose'
+import {Schema, Types, model} from 'mongoose'
 
 const commentSchema = new Schema({
     bookId: {
-        type: Schema.Types.ObjectId,   
+        type: Types.ObjectId,   
         required: true
     },
     userId: {
-        type: Schema.Types.ObjectId,
+        type: Types.ObjectId,
         required: true
     },    
     date: {

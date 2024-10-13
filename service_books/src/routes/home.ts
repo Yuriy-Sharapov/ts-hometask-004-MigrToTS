@@ -1,12 +1,11 @@
-const express = require('express')
+import express from 'express'
 const router = express.Router()
+export default router
 
-router.get('/', (req, res) => {
+router.get('/', (req: any, res) => {
 
     res.render('home', {
         title: 'Главная',
         user: req.user
     })
 })
-
-module.exports = router

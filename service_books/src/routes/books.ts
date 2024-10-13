@@ -1,14 +1,16 @@
 import express from 'express'
 const router = express.Router()
-module.exports = router
+export default router
 
 import multer from 'multer'
-import { cBook } from '../classes/cBook2'
+import { clBook } from '../classes/clBook'
+import { clComment } from '../classes/clComment'
 import axios from 'axios'
 import { ioc } from '../container'
-import { clBooksRepository } from '../classes/cBooksRepository'
-import Comments from '../models/comments'
-import Users from '../models/users'
+import { clBooksRepository } from '../classes/clBooksRepository'
+import { clCommentsRepository } from '../classes/clCommentsRepository'
+//import Comments from '../models/comments'
+//import Users from '../models/users'
 
 // 1. получить все книги
 router.get('/books', async (req: any, res) => {
@@ -48,22 +50,23 @@ router.post('/books/create',
     const {title, description, authors, favorite} = req.body
     const favorite_bool = favorite === 'on' ? true: false
 
-    let fileCover = ""
-    if (req.files.cover !== undefined)
-        fileCover = req.files.cover[0].path
+    // let fileCover = ""
+    // if (req.files.cover !== undefined)
+    //     fileCover = req.files.cover[0].path
 
-    let fileName = ""
-    let fileBook = ""
-    if (req.files.book !== undefined) {
-        fileName = req.files.book[0].filename
-        fileBook = req.files.book[0].path
-    }
+    // let fileName = ""
+    // let fileBook = ""
+    // if (req.files.book !== undefined) {
+    //     fileName = req.files.book[0].filename
+    //     fileBook = req.files.book[0].path
+    // }
 
-    const book = new cBook (title, description, authors, favorite_bool, fileCover, fileName, fileBook)
+    const book = new clBook (title, description, authors, favorite_bool)
+    // const book = new clBook (title, description, authors, favorite_bool, fileCover, fileName, fileBook)
     const bookrep = ioc.get(clBooksRepository)
 
     try {
-        const books = await bookrep.createBook(book, req.files)
+        const newbook = await bookrep.createBook(book, req.files)
         res.redirect('/books')
     } catch (e) {
         res.status(500).json(e)
@@ -95,28 +98,36 @@ router.get('/books/:id', async (req: any, res) => {
             console.log(e)
         }
     
-        const comments = await Comments.find({ bookId: id }).select('-__v').sort( { date : -1 } )
-        //console.log(`comments - ${comments}`)
-        // Создаем новый список комментариев, в котором будут имена пользователей
-        let notes: any[]
-        let i: number
-        for (i = 0; i < comments.length; i++) {
-            //console.log(`comment = ${comments[i]}`)
-            const comm_user = await Users.findById(comments[i].userId).select('-__v')
-            notes.push( {
-                username: comm_user.username,
-                date    : comments[i].date.toLocaleString('ru'),
-                text    : comments[i].text
-            })
+        const comrep = ioc.get(clCommentsRepository)
+        let comments: clComment[]
+        try {
+            comments = await comrep.getComments(id)
         }
+        catch(e) {
+
+        }
+        // const comments = await Comments.find({ bookId: id }).select('-__v').sort( { date : -1 } )
+        // //console.log(`comments - ${comments}`)
+        // // Создаем новый список комментариев, в котором будут имена пользователей
+        // let notes: any[]
+        // let i: number
+        // for (i = 0; i < comments.length; i++) {
+        //     //console.log(`comment = ${comments[i]}`)
+        //     const comm_user = await Users.findById(comments[i].userId).select('-__v')
+        //     notes.push( {
+        //         username: comm_user.username,
+        //         date    : comments[i].date.toLocaleString('ru'),
+        //         text    : comments[i].text
+        //     })
+        // }
         //console.log(`notes - ${notes}`)
 
         res.render("books/view", {
-            title: "Просмотреть карточку книги",
-            user : req.user,
-            book : book,
-            cnt  : cnt,
-            notes: notes
+            title    : "Просмотреть карточку книги",
+            user     : req.user,
+            book     : book,
+            cnt      : cnt,
+            comments : comments
         })        
     } catch (e) {
         console.log(`Ошибка при обращении к книге`)

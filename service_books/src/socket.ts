@@ -1,9 +1,12 @@
-const http = require('http')
-const socketIO = require('socket.io')
-const Comments = require('./models/comments')
+import http from 'http'
+import socketIO from 'socket.io'
+//import Comments from './models/comments'
+import { ioc } from './container'
+import { clCommentsRepository } from './classes/clCommentsRepository'
+import { clComment } from './classes/clComment'
 
-function onlyForHandshake(middleware) {
-    return (req, res, next) => {
+function onlyForHandshake(middleware: any) {
+    return (req: any, res: any, next: any) => {
       const isHandshake = req._query.sid === undefined;
       if (isHandshake) {
         middleware(req, res, next);
@@ -13,15 +16,15 @@ function onlyForHandshake(middleware) {
     };
   }
 
-exports.initServer = function(app, session, passport) {
+export function initSocketServer(app: any, session: any, passport: any) {
 
-    const server = http.Server(app)
-    const io = socketIO(server)
+    const server = new http.Server(app)
+    const io = new socketIO.Server(server)
 
     io.engine.use(onlyForHandshake(session));
     io.engine.use(onlyForHandshake(passport.session()));
     io.engine.use(
-      onlyForHandshake((req, res, next) => {
+      onlyForHandshake((req: any, res: any, next: any) => {
         if (req.user) {
           next();
         } else {
@@ -32,7 +35,7 @@ exports.initServer = function(app, session, passport) {
     );   
 
     // Определим входящее соединение
-    io.on('connection', (socket) => {
+    io.on('connection', (socket: any) => {
         const {id} = socket
         console.log(`connection ${id}`)
 
@@ -41,29 +44,13 @@ exports.initServer = function(app, session, passport) {
         console.log(user)
         socket.join(`user:${user.id}`);
 
-        // // реализуем несколько кастомных событий
-        // // 1. отправим сообщение самому себе
-        // socket.on('message-to-me', (msg) => {
-
-        //     console.log('socket.on(message-to-me - socket.request.user')
-        //     console.log(socket.request.user)
-
-        //     const msg_server = {
-        //         username: socket.request.user.username,
-        //         date: Date(),
-        //         text: msg.text,
-        //         type: 'me'  
-        //     }
-        //     socket.emit('message-to-me', msg_server)
-        // })
-
-        // 2. отправим сообщение всем обсуждающим книгу
+        // Отправим сообщение всем обсуждающим книгу
         console.log(`socket.handshake.query`)
         console.log(socket.handshake.query)
         const {bookId} = socket.handshake.query
         console.log(`Socket bookId: ${bookId}`)
         socket.join(bookId)
-        socket.on('message-to-book-discussants', async (msg) => {
+        socket.on('message-to-book-discussants', async (msg: any) => {
 
             console.log('socket.on(message-to-book-discussants - socket.request.user')
             console.log(socket.request.user) 
@@ -71,20 +58,31 @@ exports.initServer = function(app, session, passport) {
             console.log(bookId)                        
  
             let date = new Date()
-            const newComment = new Comments({
-              bookId: bookId,
-              userId: socket.request.user.id,
-              date  : date,
-              text  : msg.text
-            })
-            console.log(`newComment = ${newComment}`)
+            const comrep = ioc.get(clCommentsRepository)
+            const comment = new clComment(
+                                  bookId,
+                                  socket.request.user.id,
+                                  socket.request.user.username,
+                                  date,
+                                  date.toLocaleString('ru'),
+                                  msg.text)
+            
+
+            // const newComment = new Comments({
+            //   bookId: bookId,
+            //   userId: socket.request.user.id,
+            //   date  : date,
+            //   text  : 
+            // })
+            // console.log(`newComment = ${newComment}`)
 
             try {
-                await newComment.save()
+                await comrep.createComment(comment)  
+                //await newComment.save()
                 const msg_server = {
-                  username: socket.request.user.username,
-                  date    : date.toLocaleString('ru'),
-                  text    : msg.text,
+                  username : comment.username,
+                  date     : comment.userdate,
+                  text     : comment.text,
                 }  
                 console.log(`msg_server`)
                 console.log(msg_server)
@@ -97,7 +95,7 @@ exports.initServer = function(app, session, passport) {
             }
         })     
 
-        socket.on('disconnect', (socket) => {
+        socket.on('disconnect', (socket: any) => {
             console.log(`disconnect ${id}`)
         })
     })

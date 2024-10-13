@@ -1,5 +1,5 @@
-const multer = require('multer')
-const path = require('path')
+import multer from 'multer'
+import path from 'path'
 
 const storage = multer.diskStorage({
     destination(req, file, cb){
@@ -28,11 +28,12 @@ const allowedTypes = [
     'image/jpeg'
 ]        
 
-const fileFilter = (req, file, cb) => {     // Фильтр типов файлов
+const fileFilter = (req: any, file: any, cb: any) => {     // Фильтр типов файлов
+    req = req
     if (allowedTypes.includes(file.mimetype))
         cb(null, true)
     else
         cb(null, false)
 }
 
-module.exports = multer({storage, fileFilter})
+exports = multer({storage, fileFilter})

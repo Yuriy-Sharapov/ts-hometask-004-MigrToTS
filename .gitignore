@@ -1,5 +1,6 @@
 service_books/package-lock.json
 service_books/node_modules
+service_books/dest
 service_counter/package-lock.json
 service_counter/node_modules
 service_counter/data/dump.rdb

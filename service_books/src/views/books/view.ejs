@@ -69,7 +69,7 @@
     </div>
 </div>
 
-<% if (user || notes.length > 0) { %>
+<% if (user || comments.length > 0) { %>
   <br />
 
   <div class="row d-flex justify-content-left">
@@ -85,7 +85,7 @@
               <% } %>
 
               <div id="list" class="list-group">
-                <% notes.map((el, idx) => {  %>
+                <% comments.map((el, idx) => {  %>
                   <div class="card mb-4">
                     <div class="card-body">
                       <p><%= el.text %></p>
@@ -94,7 +94,7 @@
                           <p class="small mb-0 ms-2"><%= el.username %></p>
                         </div>       
                         <div class="d-flex flex-row align-items-center">
-                          <p class="small text-muted mb-0"><%= el.date %></p>
+                          <p class="small text-muted mb-0"><%= el.userdate %></p>
                         </div>                                         
                       </div>
                     </div>
